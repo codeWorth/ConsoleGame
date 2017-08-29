@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Map Maker</title>
+		<style type="text/css">
+			#canvas {
+				background-color: black;
+				float:left;
+			}
+
+			#sidebarWrapper {
+				position: relative;
+				border: 2px solid black;
+				width: 250px;
+				height: 696px;
+				float: left;
+				margin-left: 1px;
+				margin-right: 4px;
+			}
+
+			#itemEdit {
+				position: absolute;
+				top:0px;
+				left:0px;
+
+				visibility: hidden;
+
+				padding: 7px;
+				width: 236px;
+				height: 682px;
+				z-index:2;
+				overflow-y: scroll;
+			}
+
+			#sidebar {
+				visibility: hidden;
+				padding: 7px;
+				width: 236px;
+				height: 682px;
+				overflow-y: scroll;
+			}
+
+			#code {
+				height: 500px;
+				width: 250px;
+				margin-left: 5px;
+			}
+
+			#gen {
+				margin-top: 20px;
+			}
+
+			#selectedTitle {
+				text-align: center;
+			}
+
+			#descP {
+				text-align: center;
+				border: 1px solid lightgray;
+				padding: 3px;
+			}
+
+			#itemsList {
+				list-style-type: square;
+				margin-top: -12px;
+			}
+
+			#itemsList li {
+				padding: 5px;
+			}
+
+			#doorsList {
+				list-style-type: square;
+				margin-top: -12px;
+			}
+
+			#doorsList li {
+				padding: 4px;
+			}
+
+			#doorsList li input {
+				width: 20px;
+			}
+
+			#remove {
+				margin-top: -5px;
+				text-align: center;
+			}
+
+			#remove button {
+				display: inline-block;
+			}
+
+			.rmv {
+				visibility: hidden;
+			}
+
+			#itemsList li:hover > .rmv {
+				visibility: visible;
+			}
+
+			#dataList li:hover > .rmv {
+				visibility: visible;
+			}
+
+			.center {
+				text-align: center;
+			}
+
+			#itemDesc {
+				border: 1px solid lightgray;
+				padding: 3px;
+				margin-top: -12px;
+			}
+
+			#dataList {
+				list-style-type: square;
+				margin-top: -12px;
+			}
+
+			#dataList li {
+				padding: 5px;
+			}
+
+			#replace {
+				float: right;
+				color:red;
+			}
+
+			#typeInput {
+				width: 85px;
+			}
+
+			#amountInput {
+				width:45px;
+			}
+
+			#nameInput {
+				width: 120px;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas" width="700" height="700"></canvas> 
+		<div id="sidebarWrapper">
+			<div id="sidebar">
+				<h2 id="selectedTitle">Selected Room: 0</h1>
+				<div id="remove"><button id="removeBtn">Remove Room</button></div>
+				<p contentEditable="true" id="descP">There's nothing much here, except for a small door to the east.</p>
+				<p>Doors:</p>
+				<ul id="doorsList">
+				  <li>East: <input type"text" id="eDoor"></input><br/>Locked:<input id="eBox" type="checkbox"></input></li>
+				  <li>North: <input type"text" id="nDoor"></input><br/>Locked:<input id="nBox" type="checkbox"></input></li>
+				  <li>West: <input type"text" id="wDoor"></input><br/>Locked:<input id="wBox" type="checkbox"></input></li>
+				  <li>South: <input type"text" id="sDoor"></input><br/>Locked:<input id="sBox" type="checkbox"></input></li>
+				</ul>
+				<p>Room Items:</p>
+				<ul id="itemsList">
+				  <li><select id="addSelect">
+				  </select><button id="addItem">+</button></li>
+				</ul>
+			</div>
+			<div id="itemEdit">
+				<button id="done"><b>Done</b></button><button id="replace">Save to Preset</button>
+				<h2 class="center">Edit Item</h2>
+				<div id="remove"><button id="removeItemBtn">Remove Item</button></div>
+				<p class="center">Type: <input type="input" value="torch" id="typeInput"></input></p>
+				<p class="center">Amount: <input type="input" value="1" id="amountInput"></input></p>
+				<p class="center">Name: <input type="input" value="Old Torch" id="nameInput"></input></p>
+				<p>Description:</p>
+				<p contentEditable="true" id="itemDesc" class="center">Description here.</p>
+				<p>Data List:</p>
+				<ul id="dataList">
+				  <li><button id="addData">Add Data</button></li>
+				</ul>
+			</div>
+		</div>
+
+		<br/>
+		<textarea id="code"></textarea> <br/>
+		<button id="enter">Load Code</button> <br/>
+		<button id="gen">Generate Code</button>
+		<script type="text/javascript">
+			var canvas = document.getElementById("canvas");
+			var textarea = document.getElementById("code");
+			var enterButton = document.getElementById("enter");
+			var genButton = document.getElementById("gen");
+
+			var sidebar = document.getElementById("sidebar");
+			var selectedTitle = document.getElementById("selectedTitle");
+			var descP = document.getElementById("descP");
+			var removeButton = document.getElementById("removeBtn");
+			var eDoorBox = document.getElementById("eDoor");
+			var nDoorBox = document.getElementById("nDoor");
+			var wDoorBox = document.getElementById("wDoor");
+			var sDoorBox = document.getElementById("sDoor");
+			var eCheckbox = document.getElementById("eBox");
+			var nCheckbox = document.getElementById("nBox");
+			var wCheckbox = document.getElementById("wBox");
+			var sCheckbox = document.getElementById("sBox");
+			var itemsListItems = [document.getElementById("0")];
+			var addItemButton = document.getElementById("addItem");
+			var itemsList = document.getElementById("itemsList");
+			var addSelect = document.getElementById("addSelect");
+			var typeInput = document.getElementById("typeInput");
+			var amountInput = document.getElementById("amountInput");
+			var nameInput = document.getElementById("nameInput");
+			var itemDesc = document.getElementById("itemDesc");
+			var dataList = document.getElementById("dataList");
+			var addDataBtn = document.getElementById("addData");
+			var itemEditWindow = document.getElementById("itemEdit");
+			var doneBtn = document.getElementById("done");
+			var replaceBtn = document.getElementById("replace");
+			var removeItemBtn = document.getElementById("removeItemBtn");
+
+			var ctx = canvas.getContext("2d");
+			var lastDownTarget = canvas;
+			var camera = {x: -30, y: -30};
+			var moveSpeed = 13;
+			var moveVelocity = {x: 0, y: 0};
+			var space = 20;
+			var roomSize = 80 + space;
+			rooms = [];
+			lines = [];
+			itemReferenceList = JSON.parse(localStorage.getItem("presets"));
+
+			textarea.value = localStorage.getItem("map");
+
+			var selectedRoom = -1;
+			var selectedItem = -1;
+			var selectedItemCopy;
+			var shouldHighlight = false;
+			var highlightedPos = {x:0, y:0};
+
+			var delimA = "αŧ";
+			var delimB = "Ŧβ";
+			var delimW = "ωŷ";
+			var delimP = "ƅφ";
+			var delimO = "σƲ";
+			var delimU = "ſμ";
+
+			function addRoom(pos, desc) {
+				var connections = {n:-1, s:-1, e:-1, w:-1};
+				var locks = {n:false, s:false, e:false, w:false};
+				var index = rooms.length;
+				rooms.push({i:index, pos: pos, doors:connections, locks:locks, items:[], desc: desc});
+				return index;
+			}
+
+			function updateAddSelect() {
+				var lngth = addSelect.length ; //clear options
+				for (var i = 0; i < lngth; i++) {
+					addSelect.remove(0);
+				}
+
+				for (var i = 0; i < itemReferenceList.length; i++) {
+					var newOption = document.createElement("option");
+					newOption.text = itemReferenceList[i].type;
+					addSelect.add(newOption);
+				}
+
+				var newOption = document.createElement("option");
+				newOption.text = "new...";
+				addSelect.add(newOption);
+			}
+
+			function addRoom2(pos, desc, doors, locks) {
+				var index = rooms.length;
+				rooms.push({i:index, pos: pos, doors:doors, locks:locks, items:[], desc: desc});
+				return index;
+			}
+
+			function removeRoom(pos) {
+				rooms[pos] = 0;
+			}
+
+			function item(name, type, amount, desc, data) {
+				return {name: name, type: type, amount: amount, desc: desc, data: data};
+			}
+
+			function gridPos(x, y) {
+				x += camera.x;
+				y += camera.y;
+
+				return {x:Math.floor(x / roomSize), y:Math.floor(y / roomSize)};
+			}
+
+			function normalize(v) {
+				var length = Math.sqrt(v.x * v.x + v.y * v.y);
+
+			    if (length === 0) {
+			    	return;
+			    }
+
+				// normalize vector
+				v.x /= length;
+				v.y /= length;
+			}
+
+			function boolToString(bool) {
+				if (bool) {
+					return "y";
+				} else {
+					return "n";
+				}
+			}
+
+			function stringToBool(str) {
+				if (str == "y") {
+					return true;
+				} else {
+					return false;
+				}
+			}
+
+			function generateCode() {
+				var code = "";
+
+				for (var i = 0; i < rooms.length; i++) {
+					var room = rooms[i];
+					if (room === 0) {
+						if (i != rooms.length - 1) {
+							code += delimA;
+						}
+						continue;
+					}
+
+					code += room.i + delimB;
+					code += room.desc + delimB;
+					code += room.pos.x + delimW + room.pos.y + delimB;
+					code += room.doors.e + delimW + room.doors.n + delimW + room.doors.w + delimW + room.doors.s + delimB;
+					code += boolToString(room.locks.e) + delimW + boolToString(room.locks.n) + delimW + boolToString(room.locks.w) + delimW + boolToString(room.locks.s) + delimB;
+
+					var itemsCode = "";
+					for (var j = 0; j < room.items.length; j++) {
+						var item = room.items[j].item;
+
+						itemsCode += item.type + delimP;
+						itemsCode += item.amount + delimP;
+						itemsCode += item.name + delimP;
+						itemsCode += item.desc + delimP;
+
+						var datasCode = "";
+						for (var k = 0; k < item.data.length; k++) {
+							var data = item.data[k];
+
+							datasCode += data.k + delimU;
+							datasCode += data.v;
+
+							if (k != item.data.length - 1) {
+								datasCode += delimO;
+							}
+						}
+						itemsCode += datasCode + delimP;
+
+						if (j != room.items.length - 1) {
+							itemsCode += delimW;
+						}
+					}
+					code += itemsCode;
+
+					if (i != rooms.length - 1) {
+						code += delimA;
+					}
+				}
+
+				return code;
+			}
+
+			function loadCode(code) {
+				var roomCodes = code.split(delimA);
+				var roomsObj = [];
+
+				for (var i = 0; i < roomCodes.length; i++) {
+					if (roomCodes[i] === "") {
+						roomsObj.push(0);
+						continue;
+					}
+
+					var roomCode = roomCodes[i];
+					var roomAttributes = roomCode.split(delimB);
+
+					var index = parseInt(roomAttributes[0]);
+					var desc = roomAttributes[1];
+
+					var coords = roomAttributes[2].split(delimW);
+					var pos = {x:parseInt(coords[0]), y:parseInt(coords[1])};
+
+					var doors = roomAttributes[3].split(delimW);
+					var doorObj = {e:0, n:0, w:0, s:0};
+					doorObj.e = parseInt(doors[0]);
+					doorObj.n = parseInt(doors[1]);
+					doorObj.w = parseInt(doors[2]);
+					doorObj.s = parseInt(doors[3]);
+
+					var locks = roomAttributes[4].split(delimW);
+					var locksObj = {e:0, n:0, w:0, s:0};
+					locksObj.e = stringToBool(locks[0]);
+					locksObj.n = stringToBool(locks[1]);
+					locksObj.w = stringToBool(locks[2]);
+					locksObj.s = stringToBool(locks[3]);
+
+					var items = roomAttributes[5].split(delimW);
+					var itemsObj = [];
+					for (var j = 0; j < items.length; j++) {
+						if (items[j] == "") {
+							break;
+						}
+
+						var itemAttributes = items[j].split(delimP);
+
+						var itemType = itemAttributes[0];
+						var itemAmount = parseInt(itemAttributes[1]);
+						var itemName = itemAttributes[2];
+						var itemDesc = itemAttributes[3];
+
+						var itemDatas = itemAttributes[4].split(delimO);
+						var datasObj = [];
+						for (var k = 0; k < itemDatas.length; k++) {
+							if (itemDatas[k] == "") {
+								continue;
+							}
+
+							var dataParts = itemDatas[k].split(delimU);
+
+							var dataKey = dataParts[0];
+							var dataValue = dataParts[1];
+
+							var dataObj = {i:0, k:dataKey, v:dataValue};
+							datasObj.push(dataObj);
+						}
+
+						var itemObj = {i:0, item:item(itemName, itemType, itemAmount, itemDesc, datasObj)};
+						itemsObj.push(itemObj);
+					}
+
+					var roomObj = {i:index, pos:pos, doors:doorObj, locks:locksObj, items:itemsObj, desc:desc};
+					roomsObj.push(roomObj);
+				}
+
+				rooms = roomsObj;
+				updateLines();
+			}
+
+			function loadItems(roomID, itemIndex) {
+				updateRoom(roomID);
+				sidebar.style.visibility = "hidden";
+
+				var room = rooms[roomID];
+				var item = 0;
+				for (var i = 0; i < room.items.length; i++) {
+					if (room.items[i].i === itemIndex) {
+						item = room.items[i].item;
+						break;
+					}
+				}
+
+				if (item === 0) {
+					return;
+				}
+
+				selectedItem = item;
+
+				if (item.type == "") {
+					typeInput.value = "--Item Type--";
+				} else {
+					typeInput.value = item.type;
+				}
+
+				amountInput.value = item.amount;
+
+				if (item.name == "") {
+					nameInput.value = "--Item Name--";
+				} else {
+					nameInput.value = item.name;
+				}
+
+				if (item.desc == "") {
+					itemDesc.innerText = "--Item Description--";
+				} else {
+					itemDesc.innerText = item.desc;
+				}
+
+				clearUlExceptLast(dataList);
+				for (var i = 0; i < item.data.length; i++) {
+					var li = document.createElement("li");
+					li.setAttribute("id", i.toString());
+
+					var atrTitle = document.createElement("span");
+					atrTitle.contentEditable = true;
+					atrTitle.innerText = item.data[i].k;
+					atrTitle.setAttribute("id", "title");
+
+					var atrData = document.createElement("span");
+					atrData.innerText = item.data[i].v;
+					atrData.contentEditable = true;
+					atrData.setAttribute("id", "value");
+
+					var btn = document.createElement("button");
+					btn.className = "rmv";
+					btn.innerText = "-";
+					btn.addEventListener('click', function (e) {
+						var parent = e.target.parentElement;
+						removeDataEntry(parent);
+					});
+
+					li.appendChild(atrTitle);
+					li.appendChild(document.createTextNode(" : "));
+					li.appendChild(atrData);
+					li.appendChild(btn);
+
+					item.data[i].i = i;
+					dataList.insertBefore(li, dataList.childNodes[0]);
+				}
+
+				itemEditWindow.style.visibility = "visible";
+			}
+
+			function clearUlExceptLast(ul) {
+				var nodes = ul.getElementsByTagName("li");
+				var lastNode = nodes[nodes.length - 1];
+				while (ul.firstChild) { //remove all children
+				    ul.removeChild(ul.firstChild);
+				}
+
+				ul.appendChild(lastNode); //add back last one
+			}
+
+			function loadRoom(roomID) {
+				itemEditWindow.style.visibility = "hidden";
+
+				updateAddSelect();
+
+				room = rooms[roomID];
+
+				selectedTitle.innerText = "Selected Room: " + room.i;
+				descP.innerText = room.desc;
+
+				eDoorBox.value = room.doors.e;
+				eCheckbox.checked = room.locks.e;
+
+				nDoorBox.value = room.doors.n;
+				nCheckbox.checked = room.locks.n;
+
+				wDoorBox.value = room.doors.w;
+				wCheckbox.checked = room.locks.w;
+
+				sDoorBox.value = room.doors.s;
+				sCheckbox.checked = room.locks.s;
+
+				clearUlExceptLast(itemsList);
+				for (var i = 0; i < room.items.length; i++) {
+					var item = room.items[i].item;
+
+					var li = document.createElement("li");
+					li.setAttribute("id", i.toString());
+
+					var btn = document.createElement("button");
+					btn.className = "rmv";
+					btn.innerText = "Edit";
+					btn.addEventListener('click', function (e) {
+						var parent = e.target.parentElement;
+						loadItems(selectedRoom, parseInt(parent.id));
+					});
+
+					var spn = document.createElement("span");
+					spn.innerText = item.name;
+
+					li.appendChild(spn);
+					li.appendChild(btn);
+
+					room.items[i].i = i;
+					itemsList.insertBefore(li, itemsList.childNodes[0]);
+				}
+
+				sidebar.style.visibility = "visible";
+			}
+
+			function updateRoom(roomID) {
+				if (roomID == -1) {
+					return;
+				}
+
+				room = rooms[roomID];
+
+				room.desc = descP.innerText;
+
+				room.doors.e = parseInt(eDoorBox.value);
+				room.locks.e = eCheckbox.checked;
+
+				room.doors.n = parseInt(nDoorBox.value);
+				room.locks.n = nCheckbox.checked;
+
+				room.doors.s = parseInt(sDoorBox.value);
+				room.locks.s = sCheckbox.checked;
+
+				room.doors.w = parseInt(wDoorBox.value);
+				room.locks.w = wCheckbox.checked;
+
+				updateLines();
+			}
+
+			function updateLines() {
+				lines = [];
+				for (var i = 0; i < rooms.length; i++) {
+					var cncs = [];
+					var room = rooms[i];
+
+					if (room === 0) {
+						continue;
+					}
+
+					cncs.push(room.doors.e);
+					cncs.push(room.doors.n);
+					cncs.push(room.doors.w);
+					cncs.push(room.doors.s);
+
+					for (var k = 0; k < cncs.length; k++) {
+						if (cncs[k] == -1) {
+							continue;
+						}
+
+						for (var j = 0; j < rooms.length; j++) {
+							var otherRoom = rooms[j];
+							if (otherRoom === 0) {
+								continue;
+							}
+
+							if (otherRoom.i != cncs[k]) {
+								continue;
+							}
+
+							var otherCncs = [];
+							otherCncs.push(otherRoom.doors.e);
+							otherCncs.push(otherRoom.doors.n);
+							otherCncs.push(otherRoom.doors.w);
+							otherCncs.push(otherRoom.doors.s);
+
+							var index = otherCncs.indexOf(room.i);
+							if (index != -1) {
+								var x1 = offX(k) + room.pos.x * roomSize;
+								var y1 = offY(k) + room.pos.y * roomSize;
+
+								var x2 = offX(index) + otherRoom.pos.x * roomSize;
+								var y2 = offY(index) + otherRoom.pos.y * roomSize;
+								
+								lines.push({x1:x1, y1:y1, x2:x2, y2:y2});
+							}
+						}
+					}
+				}
+			}
+
+			addItemButton.addEventListener('click', function (e) {
+				addToItemsList(addSelect.options[addSelect.selectedIndex].innerText);
+			});
+
+			function presetForType(type) {
+				for (var i = 0; i < itemReferenceList.length; i++) {
+					if (itemReferenceList[i].type == type) {
+						return itemReferenceList[i];
+					}
+				}
+			}
+
+			function addToItemsList(type) {
+				var itemObj;
+				var room = rooms[selectedRoom];
+				if (type == "new...") {
+					itemObj = item("", "", 1, "", []);
+				} else {
+					var preset = presetForType(type);
+					itemObj = JSON.parse(JSON.stringify(preset));
+				}
+
+				var subItems = itemsList.getElementsByTagName("li");
+				var lastIndex = 0;
+				if (subItems.length > 1) {
+					lastIndex = parseInt(subItems[0].id) + 1;
+				}
+
+				room.items.push({i:lastIndex, item:itemObj})
+
+				var li = document.createElement("li");
+				li.setAttribute("id", lastIndex.toString());
+
+				var btn = document.createElement("button");
+				btn.className = "rmv";
+				btn.innerText = "Edit";
+
+				li.appendChild(document.createElement("span"));
+				li.appendChild(btn);
+
+				itemsList.insertBefore(li, itemsList.childNodes[0]);
+				loadItems(selectedRoom, lastIndex);
+			}
+
+			addDataBtn.addEventListener('click', function (e) {
+				var subItems = dataList.getElementsByTagName("li");
+				var lastIndex = 0;
+				if (subItems.length > 1) {
+					lastIndex = parseInt(subItems[0].id) + 1;
+				}
+
+				var li = document.createElement("li");
+				li.setAttribute("id", lastIndex);
+
+				selectedItem.data.push({i:lastIndex, k:"", v:""})
+
+				var atrTitle = document.createElement("span");
+				atrTitle.contentEditable = true;
+				atrTitle.innerText = "--Key--";
+				atrTitle.setAttribute("id", "title");
+
+				var atrData = document.createElement("span");
+				atrData.innerText = "--Value--";
+				atrData.contentEditable = true;
+				atrData.setAttribute("id", "value");
+
+				var btn = document.createElement("button");
+				btn.className = "rmv";
+				btn.innerText = "-";
+				btn.addEventListener('click', function (e) {
+					var parent = e.target.parentElement;
+					removeDataEntry(parent);
+				});
+
+				li.appendChild(atrTitle);
+				li.appendChild(document.createTextNode(" : "));
+				li.appendChild(atrData);
+				li.appendChild(btn);
+
+				dataList.insertBefore(li, dataList.childNodes[0]);
+			});
+
+			function removeDataEntry(parent) {
+				for (var i = 0; i < selectedItem.data.length; i++) {
+					if (selectedItem.data[i].i == parseInt(parent.id)) {
+						dataList.removeChild(parent);
+						selectedItem.data.splice(i, 1);
+						return;
+					}
+				}
+			}
+
+			function updateItem() {
+				selectedItem.type = typeInput.value;
+				selectedItem.name = nameInput.value;
+				selectedItem.amount = parseInt(amountInput.value);
+				selectedItem.desc = itemDesc.innerText;
+
+				var dataNodes = dataList.getElementsByTagName("li");
+				for (var i = 0; i < dataNodes.length - 1; i++) { //length - 1 because we dont want the add button
+					var index = parseInt(dataNodes[i].id);
+					var atrName = dataNodes[i].querySelector("#title").innerText;
+					var atrValue = dataNodes[i].querySelector("#value").innerText;
+
+					for (var j = 0; j < selectedItem.data.length; j++) {
+						if (selectedItem.data[j].i === index) {
+							selectedItem.data[j].k = atrName;
+							selectedItem.data[j].v = atrValue;
+							j = selectedItem.data.length;
+						}
+					}
+				}
+			}
+
+			done.addEventListener('click', function (e) {
+				updateItem();
+				loadRoom(selectedRoom);
+			});
+
+			replace.addEventListener('click', function (e) {
+				updateItem();
+
+				var found = false;
+				for (var i = 0; i < itemReferenceList.length; i++) {
+					if (itemReferenceList[i].type == selectedItem.type) {
+						itemReferenceList[i] = JSON.parse(JSON.stringify(selectedItem));
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					itemReferenceList.push(JSON.parse(JSON.stringify(selectedItem)));
+				}
+
+				localStorage.setItem("presets", JSON.stringify(itemReferenceList));
+				loadRoom(selectedRoom);
+			});
+
+			enterButton.addEventListener('click', function (e) {
+				var code = textarea.value;
+				loadCode(code);
+			});
+
+			genButton.addEventListener('click', function (e) {
+				var code = generateCode();
+				textarea.value = code;
+				localStorage.setItem("map", code);
+			});
+
+			document.addEventListener('keydown', function (e) {
+				if (lastDownTarget != canvas) {
+					return;
+				}
+
+				if (e.repeat) {
+					return;
+				}
+
+			    switch(e.keyCode) {
+			    	case 87:
+			    		moveVelocity.y = 1;
+			    		break; 
+			    	case 65:
+			    		moveVelocity.x = 1;
+			    		break;
+			    	case 68:
+			    		moveVelocity.x = -1;
+			    		break;
+			    	case 83:
+			    		moveVelocity.y = -1;
+			    		break;
+			    }
+
+			    normalize(moveVelocity, moveSpeed);
+			});
+
+			document.addEventListener('keyup', function (e) {
+			    switch(e.keyCode) {
+			    	case 87:
+			    		moveVelocity.y = 0;
+			    		break; 
+			    	case 65:
+			    		moveVelocity.x = 0;
+			    		break;
+			    	case 68:
+			    		moveVelocity.x = 0;
+			    		break;
+			    	case 83:
+			    		moveVelocity.y = 0;
+			    		break;
+			    }
+
+			    normalize(moveVelocity, moveSpeed);
+			});
+
+			removeButton.addEventListener('click', function (e) {
+				if (confirm("Delete Room?")) {
+					removeRoom(selectedRoom);
+					selectedRoom = -1;
+					sidebar.style.visibility = "hidden";
+					updateLines();
+				}
+			});
+
+			removeItemBtn.addEventListener('click', function (e) {
+				var room = rooms[selectedRoom];
+
+				for (var i = 0; i < room.items.length; i++) {
+					if (selectedItem === room.items[i].item) {
+						if (confirm("Delete Item?")) {
+							room.items.splice(i, 1);
+							loadRoom(selectedRoom);
+							return;
+						}
+					}
+				}
+			});
+
+			document.addEventListener('mousedown', function (e) {
+				lastDownTarget = e.target;
+			});
+
+			canvas.addEventListener('mousedown', function (e) {
+				var mousePos = {x:e.clientX, y:e.clientY};
+				var pos = gridPos(e.clientX - 9, e.clientY - 9);
+
+				var selected = -1;
+				for (var i = 0; i < rooms.length; i++) {
+					room = rooms[i];
+					if (room === 0) {
+						continue;
+					}
+
+					if (pos.x === room.pos.x && pos.y == room.pos.y) {
+						selected = i;
+						break;
+					}
+				}
+
+				if (selectedRoom == -1 && selected == -1) {
+					if (confirm("Add Room?")) {
+						selectedRoom = addRoom(pos, "Enter description here.");
+						loadRoom(selectedRoom);
+					}
+					return;
+				}
+
+				updateRoom(selectedRoom);
+				if (itemEditWindow.style.visibility == "visible") {
+					updateItem();
+				}
+
+				if (selected == -1) {
+					sidebar.style.visibility = "hidden";
+					itemEditWindow.style.visibility = "hidden";
+				} else {
+					loadRoom(selected);
+				}
+
+				selectedRoom = selected;
+			});
+
+			canvas.addEventListener('mousemove', function (e) {
+				shouldHighlight = true;
+				var mousePos = {x:e.clientX, y:e.clientY};
+				highlightedPos = gridPos(e.clientX - 9, e.clientY - 9);
+			});
+
+			canvas.addEventListener('mouseout', function (e) {
+				shouldHighlight = false;
+			});
+
+			window.onbeforeunload = function (e) {
+			    e = e || window.event;
+			    if (e) {
+			        e.returnValue = "";
+			    }
+			    localStorage.setItem("map", generateCode());
+			    localStorage.setItem("presets", JSON.stringify(itemReferenceList));
+
+			    return "";
+			};
+
+			function offX(i) {
+				if (i == 0) {
+					return roomSize - space;
+				}
+				if (i == 1 || i == 3) {
+					return (roomSize - space)/2;
+				}
+				return 0;
+			}
+
+			function offY(i) {
+				if (i == 3) {
+					return roomSize - space;
+				}
+				if (i == 0 || i == 2) {
+					return (roomSize - space)/2;
+				}
+				return 0;
+			}
+
+			function draw() {
+				ctx.lineWidth = 3;
+				ctx.strokeStyle = "white";
+				ctx.clearRect(0,0,700,700);
+				ctx.font = "12pt Calibri";
+
+				camera.x -= moveVelocity.x * moveSpeed;
+				camera.y -= moveVelocity.y * moveSpeed;
+				for (var i = 0; i < rooms.length; i++) {
+					room = rooms[i];
+					if (room === 0) {
+						continue;
+					}
+
+					var roomX = room.pos.x * roomSize - camera.x;
+					var roomY = room.pos.y * roomSize - camera.y;
+					var midRoomX = room.pos.x * roomSize - camera.x + (roomSize - space)/2;
+					var midRoomY = room.pos.y * roomSize - camera.y + (roomSize - space)/2;
+
+					ctx.fillStyle = "white";
+
+					ctx.strokeRect(roomX, roomY, roomSize - space, roomSize - space);
+					ctx.fillText(room.i, room.pos.x * roomSize - camera.x + 6, room.pos.y * roomSize - camera.y + 17);
+
+					if (room.doors.w > -1) {
+						ctx.fillStyle = ((room.locks.w) ? "red" : "white");
+						ctx.fillText(room.doors.w, roomX + 5, midRoomY + 5);
+					}
+					if (room.doors.n > -1) {
+						ctx.fillStyle = ((room.locks.n) ? "red" : "white");
+						ctx.fillText(room.doors.n, midRoomX - 4, roomY + 17);
+					}
+					if (room.doors.e > -1) {
+						ctx.fillStyle = ((room.locks.e) ? "red" : "white");
+						ctx.fillText(room.doors.e, roomX + roomSize - space - 18, midRoomY + 7);
+					}
+					if (room.doors.s > -1) {
+						ctx.fillStyle = ((room.locks.s) ? "red" : "white");
+						ctx.fillText(room.doors.s, midRoomX - 4, roomY + roomSize - space - 5);
+					}
+				}
+
+				ctx.strokeStyle = "white";
+				ctx.beginPath();
+				ctx.lineWidth = 1;
+
+				for (var i = 0; i < lines.length; i++) {
+					var line = lines[i];
+
+					ctx.moveTo(line.x1  - camera.x, line.y1  - camera.y);
+					ctx.lineTo(line.x2  - camera.x, line.y2  - camera.y);
+				}
+
+				ctx.closePath();
+				ctx.stroke();
+
+				ctx.lineWidth = 3;
+
+				if (shouldHighlight) {
+					ctx.strokeStyle = "rgb(253, 255, 168)";
+					ctx.strokeRect(highlightedPos.x * roomSize - camera.x, highlightedPos.y * roomSize - camera.y, roomSize - space, roomSize - space);
+				}
+
+				if (selectedRoom > -1) {
+					ctx.lineWidth = 5;
+					ctx.strokeStyle = "yellow";
+					ctx.strokeRect(rooms[selectedRoom].pos.x * roomSize - camera.x, rooms[selectedRoom].pos.y * roomSize - camera.y, roomSize - space, roomSize - space);
+				}
+			}
+
+			setInterval(draw, 50);
+		</script>
+	</body>
+</html>
